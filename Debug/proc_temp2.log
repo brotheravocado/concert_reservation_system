@@ -1,0 +1,19 @@
+﻿  sign_up.c
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(186): warning C4244: '함수': 'time_t'에서 'unsigned int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(212): warning C4013: 'gotoxy'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(229): warning C4244: '함수': 'time_t'에서 'unsigned int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(390): warning C4047: '=': 'char'의 간접 참조 수준이 'char [2]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(460): warning C4047: '=': 'char'의 간접 참조 수준이 'char [1]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(611): warning C4047: '=': 'char'의 간접 참조 수준이 'char [2]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(615): warning C4013: 'gets'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(664): warning C4047: '=': 'char'의 간접 참조 수준이 'char [1]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(665): warning C4047: '=': 'char'의 간접 참조 수준이 'char [1]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(748): warning C4047: '=': 'char'의 간접 참조 수준이 'char [1]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(749): warning C4047: '=': 'char'의 간접 참조 수준이 'char [1]'과(와) 다릅니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(935): warning C4013: 'dologin'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(203): warning C4101: 'name' :참조되지 않은 지역 변수입니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(197): warning C4101: 'pwd' :참조되지 않은 지역 변수입니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(215): warning C4101: 'num_temp' :참조되지 않은 지역 변수입니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(200): warning C4101: 'pwd_s' :참조되지 않은 지역 변수입니다.
+c:\users\dbswl\onedrive\바탕 화면\proc_temp2\sign_up.c(206): warning C4101: 'add' :참조되지 않은 지역 변수입니다.
+  proc_temp2.vcxproj -> C:\Users\dbswl\OneDrive\바탕 화면\proc_temp2\Debug\proc_temp2.exe

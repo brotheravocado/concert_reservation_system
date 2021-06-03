@@ -1,0 +1,259 @@
+// 마지막고침 : 2020.11.17
+// win32 Visual C 2010 이상컴파일시 추가
+// 프로그램 가장 첫 줄에 추가할 것
+#define _CRT_SECURE_NO_WARNINGS
+//-----------------------------------------
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <conio.h>
+#include "header.h"
+/* for oracle */
+#include <sqlda.h>
+#include <sqlca.h>
+#include <sqlcpr.h>
+
+
+// win32 Visual C 2010 이상컴파일시 추가
+#define getch() _getch()
+//-----------------------------------------
+
+/*---------------  화면 커서 위치 제어 ----------------------*/
+#include < windows.h >
+void gotoxy(int x, int y) ;
+void getxy(int *x, int *y) ;
+void clrscr(void) ;
+/*-----------------------------------------------------------*/
+
+
+#define getch() _getch()
+
+void Date_Get_tuple();
+void select_date(char concert_num[10],varchar s[100])
+{
+
+
+
+	Date_Get_tuple(concert_num,s);
+	
+
+	EXEC SQL COMMIT WORK RELEASE ;
+	getch();
+}
+
+#define PAGE_NUM 5
+
+void Date_Get_tuple(char concert[10],varchar user_id[100])
+{
+
+/* --------------------------------------------------------------------------
+   Retrieve the current maximum employee number
+-------------------------------------------------------------------------- */
+_putenv("NLS_LANG=American_America.KO16KSC5601");
+EXEC SQL BEGIN DECLARE SECTION;
+   varchar no[100];
+   varchar name[100];
+
+   varchar concertname[100];
+   varchar singer[100];
+   varchar concertdate[100];
+
+   varchar concertD[100];
+   varchar concertnamee[100];
+   varchar singer_name[100];
+   varchar prnum[100];
+
+   char dynstmt[1000]; // 회원 정보
+   char dynstmt1[1000]; // 콘서트 정보
+
+EXEC SQL END DECLARE SECTION;
+
+   char no_temp1[10];
+   char no_temp2[10];
+   char u_id[100];
+   //u_id[100]= user_id; // 사용자 id
+   int x, y, count=0 ;
+   int check = 1;
+
+   /* Register sql_error() as the error handler. */
+   EXEC SQL WHENEVER SQLERROR DO sql_error("\7ORACLE ERROR:\n");
+
+
+   /* 사용자 입력 */
+   system("cls");
+
+   sprintf(dynstmt,"SELECT customerno,customername FROM userinfo where customerno LIKE '%%%s%%' ",
+                    user_id); // 사용자 접속중
+
+   sprintf(dynstmt1,"SELECT concertinfo.concertname,concertinfo.singer,to_char(datainfo.concertdate,'MM/DD'),datainfo.concertprnum FROM concertinfo,datainfo where concertinfo.concertnum LIKE datainfo.concertnumber and datainfo.concertnumber LIKE '%%%s%%' ",     concert); // 콘서트 이름,가수,날짜
+
+
+   //gotoxy(22,6);
+   //printf("찾을 사람의 사원번호를 입력하세요:");
+//   gets(no_temp1); 
+   
+   
+  // gotoxy(57,6);
+   //printf("찾을 사람의 이름을 입력하세요:");
+   //gets(no_temp2);
+      
+   
+   /* 실행시킬 SQL 문장*/
+   /*sprintf(dynstmt,"SELECT empno, ename FROM emp where to_char(empno) LIKE '%%%s%%' and ename LIKE '%%%s%%'  ",
+                    no_temp1, no_temp2); */
+
+   /* select 문장이 제대로 구성되어 있는지 화면에 찍어봄 */
+   //printf("dynstmt:%s\n", dynstmt);
+
+   EXEC SQL PREPARE S FROM :dynstmt ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE c_cursor CURSOR FOR S ; 
+
+   /* cursor open */
+   EXEC SQL OPEN c_cursor ; 
+
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+   x = 61;
+   y = 0 ;
+
+   for (;;)
+    {
+        EXEC SQL FETCH c_cursor INTO :no , :name;
+	no.arr[no.len] = '\0';
+	name.arr[name.len] = '\0';
+	if (!strcmp(no.arr,user_id)){
+		gotoxy(x,y);
+	printf(" %s 님 접속중",name.arr);
+	break;	
+	}
+	
+
+    }
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE c_cursor;
+
+   EXEC SQL PREPARE C FROM :dynstmt1 ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE cursor CURSOR FOR C ; 
+
+   /* cursor open */
+   EXEC SQL OPEN cursor ; 
+
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+	y = 11;
+   for (;;)
+   {
+       EXEC SQL FETCH cursor INTO :concertname , :singer, :concertdate;
+
+	concertname.arr[concertname.len] = '\0';
+	singer.arr[singer.len] = '\0';
+	concertdate.arr[concertdate.len] = '\0';
+
+
+	if(count == 0){
+		gotoxy(4,3); // concertname;
+		printf("[%s]",concertname.arr);
+		gotoxy(15,7); // singer;
+		printf("%s",singer.arr);
+	}
+	if (count == 0){ // count 1이상일 때
+		gotoxy(15,y); // concertdate
+		printf("%s",concertdate.arr);		
+	}
+	else{
+		y = y +2;
+		gotoxy(15,y); // concertdate
+		printf("%s",concertdate.arr);
+
+	}
+	count ++;
+
+    }
+
+
+
+
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE cursor;
+
+
+
+
+   gotoxy(0,0);
+   print_screen("selectdate.txt");
+
+   char date[20];
+   gotoxy(60,16);
+   printf("날짜 선택 : ");
+   gets(date);
+
+
+   EXEC SQL PREPARE K FROM :dynstmt1 ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE cursor_next CURSOR FOR K ; 
+
+   /* cursor open */
+   EXEC SQL OPEN cursor_next ; 
+
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+
+
+   for (;;)
+   {
+       EXEC SQL FETCH cursor_next INTO :concertnamee , :singer_name, :concertD, :prnum;
+
+	concertnamee.arr[concertnamee.len] = '\0';
+	singer_name.arr[singer_name.len] = '\0';
+	concertD.arr[concertD.len] = '\0';
+	prnum.arr[prnum.len] = '\0';
+
+        if(!strcmp(concertD.arr,date)){
+	   EXEC SQL CLOSE cursor_next;
+	   EXEC SQL COMMIT ;
+	   check = 0;
+	   purchase_print(prnum.arr,user_id);
+	   // 좌석선택으로 넘어가쟈~~~~~
+	}
+
+    }
+
+	 if(check == 1){
+           EXEC SQL CLOSE cursor_next;
+	   EXEC SQL COMMIT ;
+	   gotoxy(60,18);
+	   printf("다시 입력해주세요");
+           getch();
+	   Date_Get_tuple(concert,user_id);
+
+	}
+
+
+
+    /* Close the cursor. */
+
+
+}
+
+
+/* --------------------------------------------------------------------------
+int sql_error()
+
+   errrpt prints the ORACLE error msg and number.
+-------------------------------------------------------------------------- */
+
+/*---------------  화면 커서 제어 함수 --------------------*/
+#define STD_HANDLE GetStdHandle(STD_OUTPUT_HANDLE)
+
+
+
+/*---------------------------------------------------------*/

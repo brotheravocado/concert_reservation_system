@@ -1,0 +1,415 @@
+// 마지막고침 : 2020.11.17
+// win32 Visual C 2010 이상컴파일시 추가
+// 프로그램 가장 첫 줄에 추가할 것
+#define _CRT_SECURE_NO_WARNINGS
+//-----------------------------------------
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <conio.h>
+#include <time.h>
+#include "header.h"
+/* for oracle */
+#include <sqlda.h>
+#include <sqlca.h>
+#include <sqlcpr.h>
+
+// win32 Visual C 2010 이상컴파일시 추가
+#define getch() _getch()
+
+/*---------------  화면 커서 위치 제어 ----------------------*/
+#include < windows.h >
+/*-----------------------------------------------------------*/
+
+#define getch() _getch()
+
+#include < windows.h >
+
+void sign_up(char concert_num[10]) {
+   _putenv("NLS_LANG=American_America.KO16KSC5601");
+   srand(time(NULL)); // customerno 값을 저장하기 위해 랜덤 값 발생하기
+   EXEC SQL BEGIN DECLARE SECTION;
+   char dynstmt[1000];
+   varchar num[100];
+   varchar id[100];
+   varchar pwd[100];
+   varchar pwd_s[100];
+     varchar name[100];
+   varchar add[500];
+   EXEC SQL END DECLARE SECTION;
+
+   system("cls");
+   gotoxy(0,0);   
+   print_screen("signup.txt");
+
+   char num_temp[10];
+   char name_temp[10];
+   char id_temp[10];
+   char pwd_temp[10];
+   char pwd2_temp[10];
+   char add_temp[50];
+   char sp[5] = {'!','@','#','$','%'}; // 특수문자
+
+   char ch = ' ';
+
+   int i = 0;
+   int j = 0;
+   int num1 = 0;
+   int num2 = 0;
+   srand(time(NULL));
+   char s1[40];       // 변환한 문자열을 저장할 배열
+   
+   num1 = rand() % ((99999 - 1) + 10000) + 10000;
+   sprintf(s1, "%d", num1);    // %d를 지정하여 정수를 문자열로 저장
+   
+   sprintf(dynstmt,"SELECT customerno FROM userinfo where customerno LIKE '%%%s%%' ",s1);
+
+   EXEC SQL PREPARE S FROM :dynstmt ;
+    EXEC SQL DECLARE c_cursor CURSOR FOR S ; 
+   EXEC SQL OPEN c_cursor ; 
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+   for(;;) {
+      EXEC SQL FETCH c_cursor INTO :num;
+      num.arr[num.len]='\0';
+
+      if(strcmp(s1, num.arr)==0) {
+         printf("화면을 reroad 합니다.");
+         getch();
+         sign_up(concert_num);
+      }
+   }
+
+   EXEC SQL CLOSE c_cursor;
+   EXEC SQL COMMIT ;
+
+
+   /* 사용자 입력 */
+   gotoxy(29,7); // 이름 입력
+      name_temp[10] = " ";
+   i = 0;
+      while(1){
+         if(_kbhit()){
+      if(i <10 && i >= 0 ){
+         name_temp[i] = getch();
+         if (name_temp[i] == 13) {
+            break;
+               }
+         else if(name_temp[i]==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+         }
+         else{
+            printf("%c",name_temp[i]);
+            i++;
+         }
+      }
+      else{
+         char temp = getch();
+         if(temp==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+               }
+         }
+      }
+   }
+      name_temp[i] = '\0';
+
+   int name_len = i;
+   int check_name = 0;
+         for(int o = 0; o < name_len; o++){
+         if (!check_name){
+          char check = name_temp[o];
+            if(check >= 'a' && ch <='z' || ch >= 'A' && ch <= 'Z'){
+               //printf("알파벳입니다.");
+            }
+            else if(check >='0' && check <= '9'){
+               //printf("숫자입니다.");
+               check_name = 1;
+               break;
+
+            }
+            else if (check >= 0 && check <= 47 || check >=58 && check <=64 || check >=91 && check <=96 || check >=123 && check <=126){
+               //printf("특수문자입니다.");
+               check_name = 1;
+               break;
+            }
+      }
+   }
+
+   if (check_name == 1){
+      gotoxy(29,8);
+      printf("다시 입력해주세요");
+      getch();
+      system("cls");
+       sign_up(concert_num); // 재시작
+   }
+
+
+
+   gotoxy(31,10); // 아이디 입력
+      id_temp[10] = "";
+   i = 0;
+      while(1){
+         if(_kbhit()){
+      if(i <10 && i >= 0 ){
+         id_temp[i] = getch();
+         if (id_temp[i] == 13) {
+            break;
+               }
+         else if(id_temp[i]==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+         }
+         else{
+            printf("%c",id_temp[i]);
+            i++;
+         }
+      }
+      else{
+          if(getch()==8){
+                       if(i>0){
+                        printf("\b");
+                        printf(" ");
+                        printf("\b");
+                        i--;
+                  }
+                     }
+
+         }
+      }
+   }
+      id_temp[i] = '\0';
+
+
+   /* 실행시킬 SQL 문장*/
+   sprintf(dynstmt,"SELECT customerid FROM userinfo where customerid LIKE '%%%s%%'", id_temp);
+
+   EXEC SQL PREPARE S FROM :dynstmt ;
+   EXEC SQL DECLARE c_cursor2 CURSOR FOR S ; 
+   EXEC SQL OPEN c_cursor2 ; 
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+   for (;;){
+           EXEC SQL FETCH c_cursor2 INTO :id;
+       id.arr[id.len] = '\0' ;
+      while(1){
+         if (strcmp(id_temp, id.arr) == 0){
+            // 입력받은 아이디 값과 DB에 저장된 값이 일치하는지 확인
+            gotoxy(45,10);
+            printf("사용중인 아이디 입니다. 다시 입력하세요 :)");
+            id_temp[10] = " ";
+            gotoxy(31,10);
+            printf("             ");
+            gotoxy(31,10);
+            gets(id_temp);
+         }
+         else {
+            gotoxy(45,10);
+            printf("                                            ");
+            break;
+         }
+      }
+   }
+
+   EXEC SQL CLOSE c_cursor2;
+   EXEC SQL COMMIT ;
+      
+   gotoxy(33,13); // 비밀번호 입력
+
+   pwd_temp[10] = "";
+   pwd2_temp[10] = "";   
+   i = 0;
+   j = 0;
+      while(1){
+         if(_kbhit()){
+      if(i <10 && i >= 0 ){
+         pwd_temp[i] = getch();
+         if (pwd_temp[i] == 13) {
+            break;
+               }
+         else if(pwd_temp[i]==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+         }
+         else{
+            printf("*");
+            i++;
+         }
+      }
+      else{
+         if(getch()==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+               }
+         }
+      }
+   }
+   pwd_temp[i] = '\0';   
+   gotoxy(38,16);
+      while(1){
+         if(_kbhit()){
+      if(j <10 && j >= 0 ){
+         pwd2_temp[j] = getch();
+         if (pwd2_temp[j] == 13) {
+            break;
+               }
+         else if(pwd2_temp[j]==8){
+                if(j>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               j--;
+            }
+         }
+         else{
+            printf("*");
+            j++;
+         }
+      }
+      else{
+         if(getch()==8){
+                if(j>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               j--;
+            }
+               }
+         }
+      }
+   }
+
+   pwd2_temp[j] = '\0';
+
+   while(1){
+      if (strcmp(pwd_temp, pwd2_temp) != 0){
+         // 입력받은 비밀번호 값과 비밀번호 확인 값이 일치하지 않는지 확인
+         gotoxy(52,17);
+         printf("비밀번호가 일치하지 않습니다. 다시 입력하세요 :)");
+         gotoxy(33,13);
+         printf("                       ");
+         gotoxy(38,16);
+         printf("                       ");
+         gotoxy(33,13);
+
+   pwd_temp[10] = "";
+   pwd2_temp[10] = "";   
+   i = 0;
+   j = 0;
+      while(1){
+         if(_kbhit()){
+      if(i <10 && i >= 0 ){
+         pwd_temp[i] = getch();
+         if (pwd_temp[i] == 13) {
+            break;
+               }
+         else if(pwd_temp[i]==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+         }
+         else{
+            printf("*");
+            i++;
+         }
+      }
+      else{
+         if(getch()==8){
+                if(i>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               i--;
+            }
+               }
+         }
+      }
+   }
+   pwd_temp[i] = '\0';   
+
+   gotoxy(38,16);
+      while(1){
+         if(_kbhit()){
+      if(j <10 && j >= 0 ){
+         pwd2_temp[j] = getch();
+         if (pwd2_temp[j] == 13) {
+            break;
+               }
+         else if(pwd2_temp[j]==8){
+                if(j>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               j--;
+            }
+         }
+         else{
+            printf("*");
+            j++;
+         }
+      }
+      else{
+         if(getch()==8){
+                if(j>0){
+               printf("\b");
+               printf(" ");
+               printf("\b");
+               j--;
+            }
+               }
+         }
+      }
+   }
+
+   pwd2_temp[j] = '\0';
+      }
+      else {
+         gotoxy(52,16);
+         printf("                                                      ");
+         break;
+      }
+   }   
+
+   gotoxy(29,19); // 주소 입력
+   gets(add_temp);
+   
+   // 사용자 정보 삽입
+   sprintf(dynstmt,"insert into userinfo values ('%s', '%s', '%s', '%s', '%s')", s1, id_temp, pwd_temp, name_temp, add_temp); 
+   EXEC SQL PREPARE S FROM :dynstmt ;
+   EXEC SQL DECLARE c_cursor3 CURSOR FOR S ; 
+   EXEC SQL OPEN c_cursor3 ; 
+   EXEC SQL WHENEVER NOT FOUND DO break;
+   gotoxy(18,21);
+   printf("회원가입 되었습니다! 로그인 화면으로 이동합니다!");
+   EXEC SQL CLOSE c_cursor3;
+   EXEC SQL COMMIT ;
+   getch();
+   dologin(concert_num); // 로그인 화면으로 이동
+               
+   }

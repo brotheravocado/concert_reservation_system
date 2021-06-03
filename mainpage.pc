@@ -1,0 +1,393 @@
+// 마지막고침 : 2020.11.17
+// win32 Visual C 2010 이상컴파일시 추가
+// 프로그램 가장 첫 줄에 추가할 것
+#define _CRT_SECURE_NO_WARNINGS
+//-----------------------------------------
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <conio.h>
+#include "header.h"
+
+/* for oracle */
+#include <sqlda.h>
+#include <sqlca.h>
+#include <sqlcpr.h>
+
+#define UP 72
+#define DOWN 80
+#define ENTER 13
+
+
+// win32 Visual C 2010 이상컴파일시 추가
+#define getch() _getch()
+//-----------------------------------------
+
+/*---------------  화면 커서 위치 제어 ----------------------*/
+#include < windows.h >
+void gotoxy(int x, int y) ;
+void getxy(int *x, int *y) ;
+void clrscr(void) ;
+/*-----------------------------------------------------------*/
+void print_screen(char fname[]);
+void DB_connect();
+void Get_tuple();
+void check_key();
+COORD getxy2();
+
+
+void sql_error();
+
+EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR uid[80];
+	VARCHAR pwd[20];
+EXEC SQL END DECLARE SECTION;
+
+#define getch() _getch()
+
+
+void main()
+{
+_putenv("NLS_LANG=American_America.KO16KSC5601");
+	DB_connect();
+
+	gotoxy(0,1);
+	print_screen("concert_main_list.txt");
+
+EXEC SQL BEGIN DECLARE SECTION;
+	char dynstmtt[1000];
+	varchar concertnum[100];
+	varchar concertname[100];  
+	varchar concertsinger[100];  
+	varchar concertdate[100];  
+	varchar count[100];
+
+EXEC SQL END DECLARE SECTION;
+//; 
+   sprintf(dynstmtt,"select DISTINCT concertnum,concertname,singer,concertdate from concertinfo,datainfo where concertinfo.concertnum = datainfo.concertnumber " ); // 화면출력
+
+   EXEC SQL PREPARE O FROM :dynstmtt ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE o_cursor CURSOR FOR O ; 
+
+   /* cursor open */
+   EXEC SQL OPEN o_cursor ; 
+
+   int x = 5;
+   int y = 10 ;
+   int countt = 0;
+   int temp1 = 0;
+   int temp2 = 0;
+   int temp3 = 0;
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+	for(;;){
+
+        EXEC SQL FETCH o_cursor INTO :concertnum , :concertname, :concertsinger, :concertdate;
+	concertnum.arr[concertnum.len] = '\0';
+	concertname.arr[concertname.len] = '\0';
+	concertsinger.arr[concertsinger.len] = '\0';
+	concertdate.arr[concertdate.len] = '\0';
+	if (!strcmp(concertnum.arr,"300")){
+		gotoxy(15,9);
+		printf("%s",concertname.arr);
+
+		gotoxy(15,11);
+		printf("%s",concertsinger.arr);
+			temp1 += x + 10;
+			gotoxy(temp1,10);
+			printf("%s ",concertdate.arr);
+		
+
+	}
+	if (!strcmp(concertnum.arr,"100")){
+		gotoxy(15,17);
+		printf("%s",concertname.arr);
+
+		gotoxy(15,19);
+		printf("%s",concertsinger.arr);
+
+			temp2 += x + 10;
+			gotoxy(temp2,18);
+			printf("%s ",concertdate.arr);
+		
+
+	}
+	if (!strcmp(concertnum.arr,"200")){
+		gotoxy(15,25);
+		printf("%s",concertname.arr);
+
+		gotoxy(15,27);
+		printf("%s",concertsinger.arr);
+
+			temp3 += x + 10;
+			gotoxy(temp3,26);
+			printf("%s ",concertdate.arr);
+		
+
+	}
+
+	}
+	
+
+	
+
+    
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE o_cursor;
+
+	gotoxy(67,13);
+	//printf(pose.X);
+	//printf(pose.Y);
+	int key = 0;
+	while(TRUE){
+		CONSOLE_SCREEN_BUFFER_INFO presentCur;
+		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &presentCur);
+		if(_kbhit()){
+			key = _getch();
+			//printf("key : %d",key);
+			if(key==224){
+				//COORD pose = getxy2();
+				key = _getch();
+				switch(key){
+					case DOWN:
+						if(presentCur.dwCursorPosition.Y == 13){
+							gotoxy(67,21);
+							break;
+						}
+						if(presentCur.dwCursorPosition.Y == 21){
+							gotoxy(67,29);
+							break;
+						}
+					case UP:
+						if(presentCur.dwCursorPosition.Y == 21){
+							gotoxy(67,13);
+							break;
+						}
+						if(presentCur.dwCursorPosition.Y == 29){
+							gotoxy(67,21);
+							break;
+						}
+					//default:
+						//break;
+
+				}	
+			}
+			if(key == 13){
+				//printf("key enter 기원 : %d",key);
+				//system("cls");
+				//printscreen(1,"chooselogin.txt");
+				//break;
+				if(presentCur.dwCursorPosition.Y == 13){
+					system("cls");
+					chooselogin("300");
+					//break;	
+					}
+				if(presentCur.dwCursorPosition.Y == 21){
+					system("cls");
+					chooselogin("100");
+					//break;				
+					}
+				if(presentCur.dwCursorPosition.Y == 29){
+					system("cls");
+					chooselogin("200");
+					//break;						
+					}
+			}
+
+		}
+	}
+	return 0;
+}
+
+void DB_connect()
+{
+   strcpy((char *)uid.arr,"b20183108@//sedb.deu.ac.kr:1521/orcl");
+   uid.len = (short) strlen((char *)uid.arr);
+   strcpy((char *)pwd.arr,"20183108");
+   pwd.len = (short) strlen((char *)pwd.arr);
+
+   EXEC SQL CONNECT :uid IDENTIFIED BY :pwd;
+
+	// connection이 실패했을경우의 처리부분
+
+	if (sqlca.sqlcode != 0 && sqlca.sqlcode != -1405){ 
+		printf("Connect error: %s", sqlca.sqlerrm.sqlerrmc);
+		getch();
+		exit(-1);
+	}
+
+
+}
+
+#define PAGE_NUM 5
+void Get_tuple()
+{
+/* --------------------------------------------------------------------------
+   Retrieve the current maximum employee number
+-------------------------------------------------------------------------- */
+EXEC SQL BEGIN DECLARE SECTION;
+   varchar no[100];
+   varchar name[100];
+
+   char dynstmt[1000];
+EXEC SQL END DECLARE SECTION;
+
+   char no_temp1[10];
+   char no_temp2[10];
+
+   int x, y, count=0, i ;
+
+
+   /* Register sql_error() as the error handler. */
+   EXEC SQL WHENEVER SQLERROR DO sql_error("\7ORACLE ERROR:\n");
+
+
+   /* 사용자 입력 */
+   clrscr();
+
+   //print_screen("concert_main_list.txt");
+
+   
+      
+   
+   /* 실행시킬 SQL 문장*/
+   //sprintf(dynstmt,"SELECT empno, ename FROM emp where to_char(empno) LIKE '%%%s%%' and ename LIKE '%%%s%%'  ", no_temp1, no_temp2); 
+
+   /* select 문장이 제대로 구성되어 있는지 화면에 찍어봄 */
+   //printf("dynstmt:%s\n", dynstmt);
+
+   EXEC SQL PREPARE S FROM :dynstmt ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE c_cursor CURSOR FOR S ; 
+
+   /* cursor open */
+   EXEC SQL OPEN c_cursor ; 
+
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+   x = 24;
+   y = 10 ;
+
+   for (;;)
+    {
+        EXEC SQL FETCH c_cursor INTO :no, :name;
+
+	no.arr[no.len] = '\0' ;
+	name.arr[name.len] = '\0';
+	gotoxy(x,y);
+	printf(" | %-4s      |    %-10s  |", no.arr, name.arr);
+	y++;
+	count++;
+	if( count == PAGE_NUM){
+	   printf("\n                                  hit any key\n");
+	   count = 0;
+	   getch();
+
+           gotoxy(0,10); //이전 화면 부분 클리어
+           for(i= 0; i < PAGE_NUM; i++){
+		printf("                                                          \n");
+	   }
+
+	   y = 10 ;
+	}
+
+    }
+    printf("                              (END)\n");
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE c_cursor;
+
+   EXEC SQL COMMIT ;
+}
+
+void print_screen(char fname[])
+{
+	FILE *fp;
+	char line[100];
+
+	if ( (fp = fopen(fname,"r"))  == NULL ){
+		printf("file open error\n");
+		getch();
+		exit(-1);
+	}
+	while(1)
+	{
+		if( fgets(line, 99, fp) == NULL){
+		     break;
+		}
+		printf("%s", line);
+	}
+
+	fclose(fp);
+}
+
+/* --------------------------------------------------------------------------
+int sql_error()
+
+   errrpt prints the ORACLE error msg and number.
+-------------------------------------------------------------------------- */
+void sql_error(char *msg)
+{
+    char err_msg[128];
+    size_t buf_len, msg_len;
+
+    EXEC SQL WHENEVER SQLERROR CONTINUE;
+
+    printf("\n%s\n", msg);
+    buf_len = sizeof (err_msg);
+    sqlglm(err_msg, &buf_len, &msg_len);
+    printf("%.*s\n", msg_len, err_msg);
+
+    getch();
+    EXEC SQL ROLLBACK WORK;
+    //exit(EXIT_FAILURE);
+}
+/*---------------  화면 커서 제어 함수 --------------------*/
+#define STD_HANDLE GetStdHandle(STD_OUTPUT_HANDLE)
+
+void gotoxy(int x, int y)
+{
+    COORD Cur= {(SHORT)x, (SHORT) y};
+
+    SetConsoleCursorPosition(STD_HANDLE, Cur);
+}
+
+void getxy(int *x, int *y)
+{
+    CONSOLE_SCREEN_BUFFER_INFO Buf ;
+
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &Buf);
+    *x = (int)Buf.dwCursorPosition.X ;
+    *y = (int)Buf.dwCursorPosition.Y ;
+ 
+}
+
+COORD getxy2(){
+	COORD pos;
+	CONSOLE_SCREEN_BUFFER_INFO Buf;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &Buf);
+	pos.X = (int)Buf.dwCursorPosition.X ;
+    	pos.Y = (int)Buf.dwCursorPosition.Y ;
+	return pos;
+}
+
+
+void clrscr(void)
+{
+    COORD Cur= {0, 0};
+    unsigned long dwLen;
+
+    FillConsoleOutputCharacter(STD_HANDLE, ' ', 80*25, Cur, &dwLen);
+}
+
+/*---------------------------------------------------------*/
+
+
+
+   

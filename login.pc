@@ -1,0 +1,219 @@
+// 마지막고침 : 2020.11.17
+// win32 Visual C 2010 이상컴파일시 추가
+// 프로그램 가장 첫 줄에 추가할 것
+#define _CRT_SECURE_NO_WARNINGS
+//-----------------------------------------
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <conio.h>
+#include "header.h"
+
+/* for oracle */
+#include <sqlda.h>
+#include <sqlca.h>
+#include <sqlcpr.h>
+
+#define UP 72
+#define DOWN 80
+#define ENTER 13
+
+
+// win32 Visual C 2010 이상컴파일시 추가
+#define getch() _getch()
+//-----------------------------------------
+
+/*---------------  화면 커서 위치 제어 ----------------------*/
+#include < windows.h >
+
+/*-----------------------------------------------------------*/
+
+
+
+EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR uid[80];
+	VARCHAR pwd[20];
+EXEC SQL END DECLARE SECTION;
+
+#define getch() _getch()
+#include < windows.h >
+
+
+
+
+#define PAGE_NUM 5
+
+
+
+void dologin(char concert_num[10]){
+
+_putenv("NLS_LANG=American_America.KO16KSC5601");
+		EXEC SQL BEGIN DECLARE SECTION;
+
+			char dynstmt[1000];
+
+			varchar u_id[100];
+			varchar u_pwd[100];
+			varchar u_name[100];
+			varchar u_no[100];
+
+		EXEC SQL END DECLARE SECTION;
+	system("cls");
+	gotoxy(0,0);	
+	print_screen("login.txt");
+	char u_uid[20]; // 아이디
+	char u_upd[20]; // 비번
+	int check = 0; // 로그인여부
+	int i = 0;
+	gotoxy(26,9);
+
+   while(1){ // 아이디 입력
+      if(_kbhit()){
+	if(i <10 && i >= 0 ){
+         u_uid[i] = getch();
+          if (u_uid[i] == 13) {
+	         break;
+         }
+	else if(u_uid[i]==8){
+	    if(i>0){
+            printf("\b");
+	    printf(" ");
+	    printf("\b");
+
+		i--;
+
+			}
+		}
+
+
+	else{
+	  printf("%c",u_uid[i]);
+        
+         i++;
+		}
+         }
+	else{
+		char temp = getch();
+		if(temp==8){
+    			if(i>0){
+				printf("\b");
+				printf(" ");
+				printf("\b");
+				i--;
+				}
+      			}
+   		}
+         
+      }
+   }
+	u_uid[i] = '\0';
+	gotoxy(28,13);
+ 	
+	i = 0;
+   while(1){ // 비밀번호 입력
+      if(_kbhit()){
+	if(i <10 && i >= 0 ){
+         u_upd[i] = getch();
+          if (u_upd[i] == 13) {
+	         break;
+         }
+	else if(u_upd[i]==8){
+	    if(i>0){
+            printf("\b");
+	    printf(" ");
+	    printf("\b");
+
+		i--;
+
+			}
+		}
+	else{
+	  printf("*");
+        
+         i++;
+		}
+         }
+	else{
+		char temp = getch();
+		if(temp==8){
+    			if(i>0){
+				printf("\b");
+				printf(" ");
+				printf("\b");
+				i--;
+				}
+      			}
+   		}
+         
+      }
+   }
+   u_upd[i] = '\0';
+
+	//printf("hoho");
+	   sprintf(dynstmt,"SELECT customerno,customerid,customerpwd,customername FROM userinfo where customerid LIKE '%%%s%%' and customerpwd LIKE '%%%s%%' ",u_uid,u_upd);
+
+   EXEC SQL PREPARE S FROM :dynstmt ;
+   EXEC SQL DECLARE c_cursor CURSOR FOR S ; 
+  EXEC SQL OPEN c_cursor ; 
+ EXEC SQL WHENEVER NOT FOUND DO break;
+	gotoxy(26,14);
+for (;;){
+        EXEC SQL FETCH c_cursor INTO :u_no, :u_id, :u_pwd, :u_name;
+ 	u_no.arr[u_no.len] = '\0' ;
+ 	u_id.arr[u_id.len] = '\0' ;
+   	u_pwd.arr[u_pwd.len] = '\0';
+   	u_name.arr[u_name.len] = '\0';
+
+	if (strcmp(u_uid, u_id.arr) == 0 && strcmp(u_upd, u_pwd.arr) == 0){
+		printf("로그인에 성공하였습니다!\n\n");
+		gotoxy(26,15);
+		printf("%s님 환영합니다.\n\n", u_name.arr);
+		check = 1;
+		getch();
+
+//		break;
+	}
+							
+	
+}
+ EXEC SQL CLOSE c_cursor;
+
+EXEC SQL COMMIT ;
+	if (check == 1){
+		select_date(concert_num,u_no.arr);
+	}
+	else if (check == 0){
+		printf("로그인에 실패하였습니다!\n\n");
+		gotoxy(26,15);
+		printf("재접속하겠습니다!");
+		getch();
+		dologin(concert_num); // 재접속
+	}
+		 EXEC SQL CLOSE c_cursor;
+
+		EXEC SQL COMMIT ;
+
+
+
+
+}
+
+
+
+/* --------------------------------------------------------------------------
+
+   errrpt prints the ORACLE error msg and number.
+-------------------------------------------------------------------------- */
+
+/*---------------  화면 커서 제어 함수 --------------------*/
+#define STD_HANDLE GetStdHandle(STD_OUTPUT_HANDLE)
+
+
+
+/*---------------------------------------------------------*/
+
+
+
+   

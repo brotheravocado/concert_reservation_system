@@ -1,0 +1,262 @@
+// 마지막고침 : 2020.11.17
+// win32 Visual C 2010 이상컴파일시 추가
+// 프로그램 가장 첫 줄에 추가할 것
+#define _CRT_SECURE_NO_WARNINGS
+//-----------------------------------------
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <conio.h>
+#include "header.h"
+/* for oracle */
+#include <sqlda.h>
+#include <sqlca.h>
+#include <sqlcpr.h>
+
+#define RIGHT 77
+#define LEFT 75
+#define ENTER 13
+#define UP 72
+#define DOWN 80
+
+// win32 Visual C 2010 이상컴파일시 추가
+#define getch() _getch()
+//-----------------------------------------
+
+/*---------------  화면 커서 위치 제어 ----------------------*/
+#include < windows.h >
+void gotoxy(int x, int y) ;
+void getxy(int *x, int *y) ;
+void clrscr(void) ;
+/*-----------------------------------------------------------*/
+int delete_update = 0;
+
+#define getch() _getch()
+
+void Mypage_Get_tuple();
+void clear_mode();
+void move_mode();
+void delete_resv();
+void delete_resv(varchar prnum[10],varchar cnum[10],varchar userid[10]){
+	EXEC SQL BEGIN DECLARE SECTION;
+
+	char dynstmt[1000];
+
+	EXEC SQL END DECLARE SECTION;
+	char value = '0';
+	delete_update = 0;
+	sprintf(dynstmt,"update purchaseinfo set seatvalue = '%c', usernum = '' WHERE  concert_date like  '%s' and seatnum like  '%s' ",value,prnum, cnum);
+
+   	EXEC SQL EXECUTE IMMEDIATE :dynstmt ;
+	
+	EXEC SQL COMMIT WORK ; 
+	gotoxy(38,10);
+	printf("삭제되었습니다.");
+	getch();
+}
+void move_mode(){
+	gotoxy(82,8);
+
+	int key = 0;
+	while(TRUE){
+		CONSOLE_SCREEN_BUFFER_INFO presentCur;
+		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &presentCur);
+		if(_kbhit()){
+			key = _getch();
+			if(key==224){
+				key = _getch();
+				switch(key){
+					case DOWN:
+						if(presentCur.dwCursorPosition.Y == 8){
+							gotoxy(82,14);
+							break;
+						}
+					case UP:
+						if(presentCur.dwCursorPosition.Y == 14){
+							gotoxy(82,8);
+							break;
+						}
+				}	
+			}
+			if(key == 13){
+					if(presentCur.dwCursorPosition.Y == 8){
+							break;
+						}
+					if(presentCur.dwCursorPosition.Y == 14){
+							delete_update = 1;
+							break;
+						}
+	   			}
+			
+
+		}
+	}
+
+
+}
+void clear_mode(){
+	
+	int yy = 8;
+           gotoxy(15,yy); //이전 화면 부분 클리어
+           for(int i= 0; i < 7; i++){
+		printf("                                                          \n");
+	        yy += 1;   
+		gotoxy(15,yy);		
+	   }
+
+	
+}
+void mypage(varchar prnum[10],varchar userid[10], varchar seat[10])
+{
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+   char dynstmt[1000];
+
+EXEC SQL END DECLARE SECTION;
+   
+
+   system("cls");
+   gotoxy(0,0);
+   print_screen("mypage.txt");
+   
+   Mypage_Get_tuple(prnum, userid, seat);
+      EXEC SQL COMMIT WORK RELEASE ;
+      gotoxy(68,14);
+   getch();
+}
+
+#define PAGE_NUM 5
+
+
+void Mypage_Get_tuple(varchar prnum[10],varchar userid[10], varchar seat[10])
+{
+   _putenv("NLS_LANG=American_America.KO16KSC5601");
+   EXEC SQL BEGIN DECLARE SECTION;
+   varchar no1[100]; // 좌석 번호
+   varchar no2[100]; // 좌석 등급
+   varchar no3[100]; // 좌석 금액
+
+   varchar pr[100]; //고유콘서트 번호
+   varchar cname[100]; // 콘서트 명
+   varchar condate[100]; // 콘서트 날짜
+   varchar cclass[100]; // 콘서트 등급
+   varchar cnum[100]; // 콘서트 자리
+   varchar cprice[100]; // 콘서트 가격
+   varchar usernum[100];//회원번호
+   varchar username[100];//회원이름
+
+   char dynstmt[1000]; // 콘서트개수
+   char dynstmt3[1000]; // 콘서트 좌석, 금액 정보
+   char dynstmt2[1000]; // /* 콘서트 날짜 이름 등급 좌석 가격 출력 */
+
+   EXEC SQL END DECLARE SECTION;
+
+   int count_page = 0;
+
+   /* Register sql_error() as the error handler. */
+   EXEC SQL WHENEVER SQLERROR
+
+ DO sql_error("\7ORACLE ERROR:\n");
+
+
+
+ /* 회원 번호, 회원 이름 */
+sprintf(dynstmt3,"select customerno, customername from userinfo where customerno like '%s'", userid);
+
+
+   EXEC SQL PREPARE O FROM :dynstmt3 ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE o_cursor3 CURSOR FOR O ; 
+
+   /* cursor open */
+   EXEC SQL OPEN o_cursor3 ; 
+
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+ 
+   for (;;)
+    {
+        EXEC SQL FETCH o_cursor3 INTO :usernum, :username;
+   usernum.arr[usernum.len] = '\0';
+username.arr[username.len] = '\0';
+      
+   gotoxy(15,3);
+   printf("%s",usernum.arr);
+   gotoxy(53,3);
+   printf("%s",username.arr);
+    }
+   EXEC SQL CLOSE o_cursor3;
+    /* Close the cursor. */
+
+
+
+ 
+
+
+
+
+
+/* 콘서트 날짜 이름 등급 좌석 가격 출력 */
+sprintf(dynstmt2,"select datainfo.concertprnum ,concertinfo.concertname, datainfo.concertdate, seatinfo.seat_class, purchaseinfo.seatnum,seatinfo.seat_price from purchaseinfo,datainfo,concertinfo,seatinfo where purchaseinfo.concert_date = datainfo.concertprnum and concertinfo.concertnum = datainfo.concertnumber and (purchaseinfo.seatnum between seatinfo.seat_f_num and seatinfo.seat_l_num) and usernum like '%s'", userid);
+
+   //printf("SQL:%s\n", dynstmt2);
+
+   EXEC SQL PREPARE O FROM :dynstmt2 ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE o_cursor2 CURSOR FOR O ; 
+
+   /* cursor open */
+   EXEC SQL OPEN o_cursor2 ; 
+
+   EXEC SQL WHENEVER NOT FOUND DO break;
+
+ 
+   for (;;)
+    {
+        EXEC SQL FETCH o_cursor2 INTO :pr ,:cname ,:condate, :cclass , :cnum, :cprice;
+   	pr.arr[pr.len] = '\0';
+   	condate.arr[condate.len] = '\0';
+   	cname.arr[cname.len] = '\0';
+	cnum.arr[cnum.len] = '\0';
+	cprice.arr[cprice.len] = '\0';
+	cclass.arr[cclass.len] = '\0';
+   gotoxy(15,8);
+   printf("%s",cname.arr);    
+   gotoxy(15,10);
+   printf("%s",condate.arr);
+   gotoxy(15,12);
+   printf("%s석 %s번",cclass.arr, cnum.arr);
+   gotoxy(15,14);
+   printf("%s원",cprice.arr);
+   gotoxy(38,18);
+   count_page += 1;
+   printf("%d",count_page);
+ 
+   move_mode();
+	if(delete_update){
+		clear_mode();
+		delete_resv(pr.arr,cnum.arr,userid); // 콘서트 고유 번호와 좌석,사용자 고유번호
+
+	}
+   clear_mode();
+}
+   /* Close the cursor. */
+   EXEC SQL CLOSE o_cursor2;
+ 
+
+    /* Close the cursor. */
+	EXEC SQL COMMIT ;
+	gotoxy(38,10);
+	printf("목록 끝");
+	getch();
+	exit(1);
+
+}
+
+
+    

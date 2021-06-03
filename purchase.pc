@@ -1,0 +1,391 @@
+// 마지막고침 : 2020.11.17
+// win32 Visual C 2010 이상컴파일시 추가
+// 프로그램 가장 첫 줄에 추가할 것
+#define _CRT_SECURE_NO_WARNINGS
+//-----------------------------------------
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <conio.h>
+
+/* for oracle */
+#include <sqlda.h>
+#include <sqlca.h>
+#include <sqlcpr.h>
+#include "header.h"
+
+// win32 Visual C 2010 이상컴파일시 추가
+#define getch() _getch()
+//-----------------------------------------
+
+/*---------------  화면 커서 위치 제어 ----------------------*/
+#include < windows.h >
+void gotoxy(int x, int y) ;
+void getxy(int *x, int *y) ;
+void clrscr(void) ;
+/*-----------------------------------------------------------*/
+void print_screen(char fname[]);
+void DB_connect();
+void Purchase_Get_tuple();
+
+void sql_error();
+
+EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR uid[80];
+	VARCHAR pwd[20];
+EXEC SQL END DECLARE SECTION;
+
+#define getch() _getch()
+int reserv = 1; // 예약 했는지 확인
+
+void purchase_print(varchar prnum[100],varchar user_id[100]){
+
+	Purchase_Get_tuple(prnum,user_id);
+	EXEC SQL COMMIT WORK RELEASE ;
+	getch();
+}
+
+
+void Purchase_Get_tuple(varchar prnum[100],varchar user_id[100])
+{
+/* --------------------------------------------------------------------------
+   Retrieve the current maximum employee number
+-------------------------------------------------------------------------- */
+EXEC SQL BEGIN DECLARE SECTION;
+   varchar no[100];
+   varchar name[100];
+
+   varchar noo[100];
+   varchar namee[100];
+
+   varchar concert[100];
+   varchar concert_name[100];
+   varchar concert_date[100];
+
+   char dynstmt[1000];
+   char dynstmtt[1000];
+   char dynstmte[1000];
+
+   varchar no1[100];
+   varchar name1[100];
+
+   char dynstmt1[1000];
+
+
+EXEC SQL END DECLARE SECTION;
+   int PAGE_NUM = 80;
+   char no_temp1[10];
+   char no_temp2[10] = "12/12A";
+
+   int x, y, count=0, i ;
+   char ch = ' ';
+
+   /* Register sql_error() as the error handler. */
+   EXEC SQL WHENEVER SQLERROR DO sql_error("\7ORACLE ERROR:\n");
+
+
+   /* 사용자 입력 */
+
+   system("cls");
+   sprintf(dynstmtt,"SELECT customerno,customername FROM userinfo where customerno LIKE '%%%s%%' ",
+                    user_id); // 사용자 접속중
+   EXEC SQL PREPARE O FROM :dynstmtt ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE o_cursor CURSOR FOR O ; 
+
+   /* cursor open */
+   EXEC SQL OPEN o_cursor ; 
+
+   x = 61;
+   y = 0 ;
+
+   for (;;)
+    {
+        EXEC SQL FETCH o_cursor INTO :noo , :namee;
+	noo.arr[noo.len] = '\0';
+	namee.arr[namee.len] = '\0';
+	if (!strcmp(noo.arr,user_id)){
+		gotoxy(x,y);
+	printf(" %s 님 접속중",namee.arr);
+	break;	
+	}
+	
+
+    }
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE o_cursor;
+
+  /* sprintf(dynstmte,"SELECT concertinfo.concertname,datainfo.concertdate FROM datainfo,concertinfo where  concertinfo.concertnum = datainfo.concertnumber and concertprnum LIKE '%%%s%%' ",date); //제목이랑 날짜 출력*/
+   sprintf(dynstmte,"SELECT concertinfo.concertname,datainfo.concertdate FROM datainfo,concertinfo where  concertinfo.concertnum = datainfo.concertnumber and concertprnum LIKE '%%%s%%' ",prnum); //제목이랑 날짜 출력
+
+
+
+   EXEC SQL PREPARE J FROM :dynstmte ;
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE j_cursor CURSOR FOR J ; 
+
+   /* cursor open */
+   EXEC SQL OPEN j_cursor ; 
+
+   x = 10;
+   y = 2 ;
+  EXEC SQL WHENEVER NOT FOUND DO break;
+   for (;;)
+    {
+        EXEC SQL FETCH j_cursor INTO :concert_date , :concert_name;
+	concert_date.arr[concert_date.len] = '\0';
+	concert_name.arr[concert_name.len] = '\0';
+
+	gotoxy(x,y);
+	printf(" %s  %s 콘서트 좌석표",concert_date.arr,concert_name.arr);
+
+    }
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE j_cursor;
+
+   gotoxy(0,0);
+   print_screen("purchaseinfo.txt");
+
+//   printf("12/12A");
+//   gotoxy(21,2);
+
+
+      
+   
+   /* 실행시킬 SQL 문장*/
+   sprintf(dynstmt,"SELECT seatnum,seatvalue,usernum FROM purchaseinfo where concert_date LIKE '%%%s%%' ",prnum); 
+   sprintf(dynstmt1,"SELECT seatnum,seatvalue,usernum FROM purchaseinfo where concert_date LIKE '%%%s%%' ",prnum); 
+
+
+
+   /* select 문장이 제대로 구성되어 있는지 화면에 찍어봄 */
+   //printf("dynstmt:%s\n", dynstmt);
+
+   EXEC SQL PREPARE S FROM :dynstmt ;
+   EXEC SQL PREPARE C FROM :dynstmt1 ;
+
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE c_cursor CURSOR FOR S ; 
+
+   /* cursor open */
+   EXEC SQL OPEN c_cursor ; 
+
+  EXEC SQL WHENEVER NOT FOUND DO break;
+   x = 9;
+   y = 12 ;
+
+   for (;;)
+    {
+
+        EXEC SQL FETCH c_cursor INTO :no, :name;
+	no.arr[no.len] = '\0' ;
+	name.arr[name.len] = '\0';
+	gotoxy(x,y);
+	if(!strcmp(name.arr,"0")){
+		printf("○");	// 자리 예약가능
+	}
+	else{
+		printf("●");	// 자리 예약 불가능
+	}
+
+	count++;
+	x += 6;
+	
+	if (count == 50){
+		y += 7;
+		x = 9;
+	   //gotoxy(x,y);
+
+	}
+	else if (count % 10 == 0){
+	
+	   x = 9;
+	   y += 4 ;
+
+
+	}
+	else if(count % 5 == 0){
+	   x += 8 ;
+	}
+
+
+
+    }
+    /* Close the cursor. */
+   EXEC SQL CLOSE c_cursor;
+
+   gotoxy(71,4);
+   //gets(no_temp1); 
+   	no_temp1[10] = "";
+	i = 0;
+   	while(1){ // 자리위치 값 입력
+    	  if(_kbhit()){
+		if(i <10 && i >= 0 ){
+			no_temp1[i] = getch();
+			if (no_temp1[i] == 13) {
+				break;
+         		}
+			else if(no_temp1[i]==8){
+	    			if(i>0){
+					printf("\b");
+					printf(" ");
+					printf("\b");
+					i--;
+				}
+			}
+			else{
+				printf("%c",no_temp1[i]);
+				i++;
+			}
+		}
+		else{
+			if(getch()==8){
+	    			if(i>0){
+					printf("\b");
+					printf(" ");
+					printf("\b");
+					i--;
+				}
+      			}
+   		}
+	   }
+	}
+   	no_temp1[i] = '\0';
+
+   int name_len = i;
+   int check_name = 0;
+   		for(int o = 0; o < name_len; o++){
+			if (!check_name){
+			 char check = no_temp1[o];
+				if(check >= 'a' && ch <='z' || ch >= 'A' && ch <= 'Z'){
+					//printf("알파벳입니다.");
+					check_name = 1;
+					break;
+				}
+				else if(check >='0' && check <= '9'){
+					//printf("숫자입니다.");
+				}
+				else{
+					//printf("특수문자입니다.");
+					check_name = 1;
+					break;
+				}
+		}
+	}
+
+	int num1 = atoi(no_temp1);
+	if (num1 > 80 || num1 <=0){
+		check_name = 1;
+	}
+	if (check_name == 1){
+		gotoxy(90,22);
+		printf("다시 입력해주세요");
+		getch();
+		system("cls");
+		Purchase_Get_tuple(prnum,user_id); // 재시작
+	}
+
+   /* cursor 선언 */
+   EXEC SQL DECLARE cursor CURSOR FOR C ; 
+
+   /* cursor open */
+   EXEC SQL OPEN cursor ; 
+  EXEC SQL WHENEVER NOT FOUND DO break;
+
+   gotoxy(90,22);
+
+	for(;;){
+        EXEC SQL FETCH cursor INTO :no1, :name1;
+	no1.arr[no1.len] = '\0' ;
+	name1.arr[name1.len] = '\0';
+	if(!strcmp(no1.arr,no_temp1)){
+
+		if (!strcmp(name1.arr,"0")){
+			printf("%s",no1.arr);
+			printf("자리 예약가능");
+			gotoxy(90,23);
+			printf("예약 하시겠습니까? ___");
+			gotoxy(110,23);
+			gets(no_temp2); // 예약할 것인지
+
+			if(!strcmp(no_temp2,"Y") || !strcmp(no_temp2,"y")){
+				gotoxy(90,24);
+				//printf("화면이동해야함.");
+				//print_screen("pay.txt");
+				payinfo(prnum,user_id,no_temp1);
+				EXEC SQL CLOSE cursor;
+				EXEC SQL COMMIT ;
+				break;
+			}
+			else if(!strcmp(no_temp2,"N") || !strcmp(no_temp2,"n")){
+				gotoxy(90,24);
+				printf("예약취소되었습니다.");
+				getch();
+				system("cls");
+				EXEC SQL CLOSE cursor;
+				Purchase_Get_tuple(prnum,user_id); // 재시작
+				break;
+
+			}
+			else{ // 잘못 입력하였을 경우
+				gotoxy(90,24);
+				printf("다시 입력해주세요");
+				getch();
+				system("cls");
+				EXEC SQL CLOSE cursor;
+				Purchase_Get_tuple(prnum,user_id); // 재시작
+				break;
+			}
+
+
+		}
+		else if (!strcmp(name1.arr,"1")){
+			printf("%s",no1.arr);
+			printf("자리 예약불가능");
+			getch();
+			system("cls");
+			EXEC SQL CLOSE cursor;
+			Purchase_Get_tuple(prnum,user_id); // 재시작
+			break;
+		}
+		else{
+			printf("재입력해주세요");
+			system("cls");
+			EXEC SQL CLOSE cursor;
+			Purchase_Get_tuple(prnum,user_id); // 재시작
+			break;
+		}
+	}
+
+	}
+	
+	
+
+    /* Close the cursor. */
+   EXEC SQL CLOSE cursor;
+
+   EXEC SQL COMMIT ;
+}
+
+
+
+/* --------------------------------------------------------------------------
+int sql_error()
+
+   errrpt prints the ORACLE error msg and number.
+-------------------------------------------------------------------------- */
+
+/*---------------  화면 커서 제어 함수 --------------------*/
+#define STD_HANDLE GetStdHandle(STD_OUTPUT_HANDLE)
+
+
+
+
+/*---------------------------------------------------------*/
